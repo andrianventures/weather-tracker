@@ -18,9 +18,11 @@ A colorful, kid-friendly weather diary for 2026 with a calendar, temperature sca
 
 ## Using on iPad (no App Store)
 
+**Step-by-step guide: [docs/IPAD-SETUP.md](docs/IPAD-SETUP.md)** — GitHub Pages + "Add to Home Screen" on one iPad. No Xcode, no App Store.
+
 The app is a **Progressive Web App (PWA)**. You can put it on your son’s iPad as a home-screen icon and use it like an app, **without the App Store**. All data is saved **locally on the device** (in the browser).
 
-### Option A: Add to Home Screen (recommended, no API keys)
+### Option A: Add to Home Screen (recommended)
 
 1. **Host the app** so the iPad can open it over the internet:
    - Build: `npm run build`

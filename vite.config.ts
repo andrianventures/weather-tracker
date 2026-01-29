@@ -5,7 +5,10 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
+    // For GitHub Pages: run VITE_BASE=/your-repo-name/ npm run build
+    const base = process.env.VITE_BASE || env.VITE_BASE || '/';
     return {
+      base,
       server: {
         port: 5000,
         host: '0.0.0.0',
@@ -35,8 +38,8 @@ export default defineConfig(({ mode }) => {
         }),
       ],
       define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+        'process.env.API_KEY': JSON.stringify(process.env.GEMINI_API_KEY || env.GEMINI_API_KEY),
+        'process.env.GEMINI_API_KEY': JSON.stringify(process.env.GEMINI_API_KEY || env.GEMINI_API_KEY)
       },
       resolve: {
         alias: {
