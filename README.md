@@ -37,14 +37,11 @@ The app is a **Progressive Web App (PWA)**. You can put it on your son’s iPad 
 
 **API key only if you want AI:** The monthly report’s “Мишка-Метеоролог” text uses Google’s Gemini API. If you want that feature when the app is hosted, set `GEMINI_API_KEY` in your build environment (e.g. in your host’s env vars). The app works fully without it; the report will show a friendly fallback message.
 
-### Option B: Install as a real .ipa (advanced)
+### Option B: Native iOS app (.ipa) — no App Store
 
-If you want a native .ipa to install on one device (e.g. via cable or TestFlight) and **bypass the App Store**, you can wrap this app with **Capacitor** and build in Xcode. You will need:
+**Guide: [docs/CAPACITOR-IOS.md](docs/CAPACITOR-IOS.md)** — Build a native .ipa with **Capacitor** and install on one iPad via Xcode (ad-hoc or TestFlight). Requires **Mac**, **Xcode**, and **Apple Developer Program** ($99/year).
 
-- **Apple Developer Program** ($99/year) for signing and installing on a real device.
-- **Expo** is not required for this approach; the current app is React + Vite, and Capacitor wraps the built web app.
-
-Steps in short: add `@capacitor/core` and `@capacitor/ios`, run `npx cap add ios`, build with `npm run build`, copy into the iOS project, open in Xcode, then build and run (or archive for ad-hoc/TestFlight). Data still saves locally inside the app. If you want, I can add a `capacitor.config.ts` and exact commands to the repo.
+The project already includes Capacitor and an `ios/` Xcode project. On your Mac: `npm run build`, `cd ios/App && pod install`, then `npm run ios` to open in Xcode. Sign with your team, run on your iPad or archive for distribution. Data is stored locally in the app.
 
 ---
 
@@ -53,4 +50,5 @@ Steps in short: add `@capacitor/core` and `@capacitor/ios`, run `npx cap add ios
 - React, TypeScript, Vite  
 - Tailwind CSS  
 - Local storage for all diary data  
-- PWA (manifest + service worker) for iPad “Add to Home Screen” and offline use
+- PWA (manifest + service worker) for iPad “Add to Home Screen” and offline use  
+- Capacitor for native iOS build (.ipa, no App Store)
