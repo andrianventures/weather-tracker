@@ -20,12 +20,12 @@ const DayEntry: React.FC<DayEntryProps> = ({ date, existingEntry, onSave, onCanc
   const dayName = DAYS_FULL_RU[dayOfWeek];
   const dateStr = `${date.getDate()} ${MONTHS_RU[date.getMonth()]}, ${dayName}`;
 
-  // Center the selected temperature on load
+  // Always start with scale centered on zero
   useEffect(() => {
     if (scrollRef.current) {
-      const activeBtn = scrollRef.current.querySelector(`[data-temp="${temp}"]`);
-      if (activeBtn) {
-        activeBtn.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
+      const zeroBtn = scrollRef.current.querySelector('[data-temp="0"]');
+      if (zeroBtn) {
+        zeroBtn.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
       }
     }
   }, []);
@@ -60,12 +60,16 @@ const DayEntry: React.FC<DayEntryProps> = ({ date, existingEntry, onSave, onCanc
         <h3 className="text-2xl font-black text-center text-blue-600 uppercase tracking-widest">Градусы Цельсия 🌡️</h3>
         
         <div className="relative flex items-center group">
-          {/* Left Arrow */}
+          {/* Left Arrow - mouse + touch for iPad */}
           <button
+            type="button"
             onMouseEnter={() => startScrolling('left')}
             onMouseLeave={stopScrolling}
+            onTouchStart={(e) => { e.preventDefault(); startScrolling('left'); }}
+            onTouchEnd={stopScrolling}
+            onTouchCancel={stopScrolling}
             onClick={() => { if(scrollRef.current) scrollRef.current.scrollLeft -= 200 }}
-            className="absolute left-0 z-20 bg-blue-600/90 text-white w-16 h-24 md:w-20 md:h-32 rounded-r-3xl flex items-center justify-center text-4xl shadow-xl hover:bg-blue-700 transition-colors bouncy"
+            className="absolute left-0 z-20 bg-blue-600/90 text-white w-16 h-24 md:w-20 md:h-32 rounded-r-3xl flex items-center justify-center text-4xl shadow-xl hover:bg-blue-700 transition-colors bouncy touch-none"
           >
             ◀
           </button>
@@ -74,34 +78,53 @@ const DayEntry: React.FC<DayEntryProps> = ({ date, existingEntry, onSave, onCanc
           <div 
             ref={scrollRef}
             className="flex overflow-x-auto scroll-smooth no-scrollbar py-6 px-20 gap-4 bg-blue-50/50 rounded-[3rem] border-y-4 border-blue-100 items-center w-full min-h-[160px]"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
           >
-            {TEMP_RANGE.map(t => (
-              <button
-                key={t}
-                data-temp={t}
-                onClick={() => setTemp(t)}
-                className={`flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center text-xl md:text-2xl font-black bouncy transition-all border-4 shadow-lg
-                  ${temp === t 
-                    ? 'bg-blue-600 text-white border-white scale-125 ring-4 ring-blue-300 z-10' 
-                    : 'bg-white text-blue-500 border-blue-200 hover:border-blue-400 opacity-80'}`}
-              >
-                {t > 0 ? `+${t}` : t}
-              </button>
-            ))}
+            {TEMP_RANGE.map(t => {
+              const isZero = t === 0;
+              const isNegative = t < 0;
+              const isPositive = t > 0;
+              const colorClasses = isZero
+                ? 'bg-gray-400 text-white border-gray-500'
+                : isNegative
+                  ? 'bg-blue-500 text-white border-blue-600'
+                  : 'bg-pink-400 text-white border-pink-500';
+              const colorClassesUnselected = isZero
+                ? 'bg-gray-200 text-gray-600 border-gray-300'
+                : isNegative
+                  ? 'bg-blue-100 text-blue-700 border-blue-200'
+                  : 'bg-pink-100 text-pink-700 border-pink-200';
+              return (
+                <button
+                  key={t}
+                  data-temp={t}
+                  onClick={() => setTemp(t)}
+                  className={`flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center text-xl md:text-2xl font-black bouncy transition-all border-4 shadow-lg
+                    ${temp === t
+                      ? `${colorClasses} border-white scale-125 ring-4 z-10 ${isZero ? 'ring-gray-400' : isNegative ? 'ring-blue-300' : 'ring-pink-300'}`
+                      : `${colorClassesUnselected} hover:opacity-90 opacity-80`}`}
+                >
+                  {t > 0 ? `+${t}` : t}
+                </button>
+              );
+            })}
           </div>
 
-          {/* Right Arrow */}
+          {/* Right Arrow - mouse + touch for iPad */}
           <button
+            type="button"
             onMouseEnter={() => startScrolling('right')}
             onMouseLeave={stopScrolling}
+            onTouchStart={(e) => { e.preventDefault(); startScrolling('right'); }}
+            onTouchEnd={stopScrolling}
+            onTouchCancel={stopScrolling}
             onClick={() => { if(scrollRef.current) scrollRef.current.scrollLeft += 200 }}
-            className="absolute right-0 z-20 bg-blue-600/90 text-white w-16 h-24 md:w-20 md:h-32 rounded-l-3xl flex items-center justify-center text-4xl shadow-xl hover:bg-blue-700 transition-colors bouncy"
+            className="absolute right-0 z-20 bg-blue-600/90 text-white w-16 h-24 md:w-20 md:h-32 rounded-l-3xl flex items-center justify-center text-4xl shadow-xl hover:bg-blue-700 transition-colors bouncy touch-none"
           >
             ▶
           </button>
         </div>
-        <p className="text-center text-blue-400 font-bold italic">Наведи на стрелочки, чтобы прокрутить шкалу!</p>
+        <p className="text-center text-blue-400 font-bold italic">Нажми и держи стрелочки или наведи мышкой, чтобы прокрутить шкалу!</p>
       </div>
 
       {/* Weather Selection Section */}

@@ -1,0 +1,19 @@
+{
+  "name": "Дневник Погоды 2026",
+  "short_name": "Погода 2026",
+  "description": "Твой супер-дневник наблюдений за погодой!",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#eff6ff",
+  "theme_color": "#1d4ed8",
+  "lang": "ru",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -3,16 +3,32 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Погода 2026">
+    <meta name="theme-color" content="#1d4ed8">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Дневник Погоды 2026</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icon.svg">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        html {
+            min-height: 100%;
+            min-height: 100dvh;
+            -webkit-text-size-adjust: 100%;
+        }
         body {
             font-family: 'Comfortaa', cursive;
             background-color: #eff6ff; /* blue-50 */
             user-select: none;
             overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            min-height: 100%;
+            min-height: 100dvh;
         }
         .bouncy {
             transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);

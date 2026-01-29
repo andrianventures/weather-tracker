@@ -1,7 +1,13 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { MONTHS_RU, DAYS_FULL_RU, WEATHER_ICONS } from '../constants';
 import { WeatherStore } from '../types';
+
+function getLastEntryMonth(records: WeatherStore): number {
+  const dates = Object.keys(records);
+  if (dates.length === 0) return 0;
+  const sorted = [...dates].sort();
+  return new Date(sorted[sorted.length - 1]).getMonth();
+}
 
 interface CalendarProps {
   records: WeatherStore;
@@ -10,7 +16,12 @@ interface CalendarProps {
 }
 
 const Calendar: React.FC<CalendarProps> = ({ records, onDaySelect, onShowReport }) => {
-  const [currentMonth, setCurrentMonth] = useState(0);
+  const lastEntryMonth = useMemo(() => getLastEntryMonth(records), [records]);
+  const [currentMonth, setCurrentMonth] = useState(() => lastEntryMonth);
+
+  useEffect(() => {
+    setCurrentMonth(lastEntryMonth);
+  }, [lastEntryMonth]);
 
   const daysInMonth = new Date(2026, currentMonth + 1, 0).getDate();
   const firstDayOfMonth = new Date(2026, currentMonth, 1).getDay();
@@ -29,6 +40,8 @@ const Calendar: React.FC<CalendarProps> = ({ records, onDaySelect, onShowReport 
       const date = new Date(2026, currentMonth, day);
       const dateStr = date.toISOString().split('T')[0];
       const record = records[dateStr];
+      const dayOfWeek = (adjustedFirstDay + day - 1) % 7;
+      const isWeekend = dayOfWeek >= 5;
 
       cells.push(
         <button
@@ -36,7 +49,7 @@ const Calendar: React.FC<CalendarProps> = ({ records, onDaySelect, onShowReport 
           onClick={() => onDaySelect(date)}
           className={`h-24 md:h-36 border-4 border-transparent hover:border-blue-500 rounded-3xl flex flex-col items-center justify-center bouncy transition-all bg-blue-50/50 hover:bg-white shadow-md ${record ? 'ring-4 ring-blue-400 bg-white' : ''}`}
         >
-          <span className="text-3xl font-black text-slate-800 mb-2">{day}</span>
+          <span className={`text-3xl font-black mb-2 ${isWeekend ? 'text-red-600' : 'text-slate-800'}`}>{day}</span>
           {record && (
             <div className="flex flex-col items-center">
               <span className="text-4xl md:text-5xl">{WEATHER_ICONS[record.weather].emoji}</span>
@@ -75,8 +88,11 @@ const Calendar: React.FC<CalendarProps> = ({ records, onDaySelect, onShowReport 
       </div>
 
       <div className="grid grid-cols-7 gap-4">
-        {DAYS_FULL_RU.map(day => (
-          <div key={day} className="text-center text-xs md:text-sm font-black text-blue-600 uppercase py-3 border-b-4 border-blue-200 tracking-widest">
+        {DAYS_FULL_RU.map((day, i) => (
+          <div
+            key={day}
+            className={`text-center text-xs md:text-sm font-black uppercase py-3 border-b-4 border-blue-200 tracking-widest ${i >= 5 ? 'text-red-600' : 'text-blue-600'}`}
+          >
             {day}
           </div>
         ))}
