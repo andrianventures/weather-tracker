@@ -1,0 +1,98 @@
+
+import React, { useState } from 'react';
+import { MONTHS_RU, DAYS_FULL_RU, WEATHER_ICONS } from '../constants';
+import { WeatherStore } from '../types';
+
+interface CalendarProps {
+  records: WeatherStore;
+  onDaySelect: (date: Date) => void;
+  onShowReport: () => void;
+}
+
+const Calendar: React.FC<CalendarProps> = ({ records, onDaySelect, onShowReport }) => {
+  const [currentMonth, setCurrentMonth] = useState(0);
+
+  const daysInMonth = new Date(2026, currentMonth + 1, 0).getDate();
+  const firstDayOfMonth = new Date(2026, currentMonth, 1).getDay();
+  const adjustedFirstDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
+
+  const prevMonth = () => setCurrentMonth(prev => (prev > 0 ? prev - 1 : 0));
+  const nextMonth = () => setCurrentMonth(prev => (prev < 11 ? prev + 1 : 11));
+
+  const renderCells = () => {
+    const cells = [];
+    for (let i = 0; i < adjustedFirstDay; i++) {
+      cells.push(<div key={`empty-${i}`} className="h-24 md:h-36"></div>);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(2026, currentMonth, day);
+      const dateStr = date.toISOString().split('T')[0];
+      const record = records[dateStr];
+
+      cells.push(
+        <button
+          key={day}
+          onClick={() => onDaySelect(date)}
+          className={`h-24 md:h-36 border-4 border-transparent hover:border-blue-500 rounded-3xl flex flex-col items-center justify-center bouncy transition-all bg-blue-50/50 hover:bg-white shadow-md ${record ? 'ring-4 ring-blue-400 bg-white' : ''}`}
+        >
+          <span className="text-3xl font-black text-slate-800 mb-2">{day}</span>
+          {record && (
+            <div className="flex flex-col items-center">
+              <span className="text-4xl md:text-5xl">{WEATHER_ICONS[record.weather].emoji}</span>
+              <span className={`text-lg font-black mt-1 ${record.temperature >= 0 ? 'text-orange-500' : 'text-blue-700'}`}>
+                {record.temperature > 0 ? `+${record.temperature}` : record.temperature}°
+              </span>
+            </div>
+          )}
+        </button>
+      );
+    }
+    return cells;
+  };
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between mb-8 px-4">
+        <button 
+          onClick={prevMonth}
+          disabled={currentMonth === 0}
+          className="text-6xl bouncy disabled:opacity-20 bg-blue-200 text-blue-800 p-6 rounded-full hover:bg-blue-300 shadow-xl border-4 border-white"
+        >
+          ⬅️
+        </button>
+        <div className="text-center">
+          <h2 className="text-4xl md:text-7xl font-black text-blue-700 uppercase tracking-tighter drop-shadow-sm">{MONTHS_RU[currentMonth]}</h2>
+          <p className="text-3xl text-blue-400 font-black italic">2026 ГОД</p>
+        </div>
+        <button 
+          onClick={nextMonth}
+          disabled={currentMonth === 11}
+          className="text-6xl bouncy disabled:opacity-20 bg-blue-200 text-blue-800 p-6 rounded-full hover:bg-blue-300 shadow-xl border-4 border-white"
+        >
+          ➡️
+        </button>
+      </div>
+
+      <div className="grid grid-cols-7 gap-4">
+        {DAYS_FULL_RU.map(day => (
+          <div key={day} className="text-center text-xs md:text-sm font-black text-blue-600 uppercase py-3 border-b-4 border-blue-200 tracking-widest">
+            {day}
+          </div>
+        ))}
+        {renderCells()}
+      </div>
+
+      <div className="flex justify-center pt-10">
+        <button
+          onClick={onShowReport}
+          className="bg-emerald-500 hover:bg-emerald-600 text-white text-3xl md:text-5xl font-black py-8 px-16 rounded-[3rem] shadow-2xl bouncy transform hover:scale-105 transition-all border-b-8 border-emerald-700"
+        >
+          📈 МОЙ ОТЧЁТ ЗА МЕСЯЦ!
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default Calendar;
