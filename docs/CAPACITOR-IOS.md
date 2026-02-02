@@ -25,6 +25,19 @@ You can build a **native .ipa** from this project and install it on one iPad via
    sudo gem install cocoapods
    ```
 
+   When prompted for **Password**, enter your **Mac login password** (the one you use to unlock the Mac). Nothing appears as you type—that's normal.
+
+   **No admin password?** Install CocoaPods for your user only (no `sudo`):
+
+   ```bash
+   gem install cocoapods --user-install
+   export PATH="$HOME/.gem/ruby/$(ruby -e 'puts RUBY_VERSION')/bin:$PATH"
+   ```
+
+   Add that `export` line to your `~/.zshrc` (or `~/.bash_profile`) so `pod` is found in new terminals. Then run `pod install` from step 4.
+
+   Alternatively, if you have **Homebrew**: `brew install cocoapods` (often works without sudo).
+
 4. Install iOS dependencies:
 
    ```bash
@@ -50,14 +63,39 @@ You can build a **native .ipa** from this project and install it on one iPad via
 
 ---
 
-## 2. In Xcode: sign and run on iPad
+## 2. Get the app on your iPad (two options)
+
+### Option A: Run from Xcode (iPad connected to Mac)
+
+You need to **connect the iPad via USB at least once** so Apple can register the device and Xcode can create a provisioning profile. After that, you can use **Connect via network** (Wi‑Fi) for future runs if you enable it.
 
 1. In Xcode, select the **App** project (blue icon) in the left sidebar.
 2. Select the **App** target → **Signing & Capabilities**.
 3. Under **Team**, choose your Apple ID team (or add your Apple ID in Xcode → Settings → Accounts). You need a **paid** Apple Developer Program membership to run on a real device.
-4. Connect your **iPad** via USB (or use “Connect via network” if enabled).
-5. At the top, choose your **iPad** as the run destination (instead of “Any iOS Device” or a simulator).
-6. Press **Run** (▶) or **Product → Run**. The app installs and launches on the iPad. Data is stored locally in the app (WebView storage).
+4. **Connect your iPad** to the Mac via **USB** (unlock the iPad and tap **Trust** if asked). For later runs you can use “Connect via network” (Window → Devices and Simulators → select iPad → check "Connect via network").
+5. If Xcode says "No devices" or "No profiles", register the iPad (troubleshooting below), then try again.
+6. At the top, choose your **iPad** as the run destination (instead of “Any iOS Device” or a simulator).
+7. Press **Run** (▶) or **Product → Run**. The app installs and launches on the iPad. Data is stored locally using **Capacitor Preferences** (native iOS storage), so it survives app rebuilds and dev deploys.
+
+**No cable / iPad elsewhere?** Install via **TestFlight** instead: build and upload from the Mac once; on the iPad install the TestFlight app and open the invite link. No USB needed (see §3 TestFlight below).
+
+**“No devices” / “No profiles” error?** Apple needs your iPad registered before it can create a provisioning profile:
+
+1. Connect the **iPad** to the Mac via USB. Unlock the iPad and tap **Trust** if asked.
+2. On the Mac, open **Finder**, select the iPad in the sidebar, then click the device name under the tabs. Click the text that shows **Model**, **Serial Number**, etc. until it shows **UDID** — right‑click it and **Copy**.
+3. Go to [Certificates, Identifiers & Profiles → Devices](https://developer.apple.com/account/resources/devices/list) (sign in with your Apple Developer account).
+4. Click **+** to add a device: paste the UDID, give it a name (e.g. “My iPad”), register.
+5. In **Xcode**, select the **App** target → **Signing & Capabilities**. Click **Try Again** or uncheck/check **Automatically manage signing** so Xcode fetches a new profile that includes the device.
+6. Choose your **iPad** as the run destination and press **Run** again.
+
+**“Development mode disabled” / “Developer Mode disabled”?** (iOS 16+) On the **iPad**, enable Developer Mode:
+
+1. Open **Settings** → **Privacy & Security** → **Developer Mode**.
+2. Turn **Developer Mode** on → tap **Restart** when asked.
+3. After the iPad restarts, confirm with **Turn On** and enter your device passcode if prompted.
+4. Reconnect the iPad to the Mac and run from Xcode again.
+
+If **Developer Mode** doesn’t appear, unplug and replug the iPad, or restart the iPad once after connecting to the Mac.
 
 ---
 
@@ -101,9 +139,30 @@ Whenever you change the React/Vite app:
 
 ---
 
-## 5. Optional: Gemini API key in the native app
+## 5. Data persistence on iPad (dev mode)
 
-The app uses `localStorage` and the same build as the web. If you want the “Мишка-Метеоролог” AI in the monthly report inside the native app, bake the key into the build **before** syncing to iOS:
+The app uses **Capacitor Preferences** for storage on the native app. Data is saved in iOS UserDefaults, so it stays intact across:
+
+- App rebuilds and reinstall from Xcode
+- `npm run build` and `npx cap sync ios`
+- Live reload (if you use a dev server URL in `capacitor.config.ts`)
+
+If you had data in the app before this change, it is migrated once from the old WebView storage into Preferences when you first open the updated app.
+
+**After adding new Capacitor plugins** (e.g. `@capacitor/preferences`), run `pod install` in the iOS project, then sync:
+
+```bash
+cd ios/App
+pod install
+cd ../..
+npx cap sync ios
+```
+
+---
+
+## 6. Optional: Gemini API key in the native app
+
+The app uses the same build as the web. If you want the “Мишка-Метеоролог” AI in the monthly report inside the native app, bake the key into the build **before** syncing to iOS:
 
 - Put `GEMINI_API_KEY` in `.env.local` on your Mac.
 - Run `npm run build` (Vite will read `.env.local` and embed the key in the bundle).
@@ -123,4 +182,4 @@ Do **not** commit `.env.local`; it’s in `.gitignore`.
 | Run on iPad       | In Xcode: select iPad → Run               |
 | Create .ipa       | Product → Archive → Distribute (Ad Hoc or TestFlight) |
 
-Data is stored **locally on the iPad** in the app (same as the PWA). No server or App Store required for daily use.
+Data is stored **locally on the iPad** via Capacitor Preferences (native storage). No server or App Store required for daily use.

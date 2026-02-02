@@ -19,3 +19,9 @@ export const WEATHER_ICONS = {
 
 // Scale from -20 to +40
 export const TEMP_RANGE = Array.from({ length: 61 }, (_, i) => i - 20);
+
+// Morning / evening tabs (Russian)
+export const TIME_OF_DAY = {
+  morning: { label: 'Утро', icon: '🌅' },
+  evening: { label: 'Вечер', icon: '🌙' },
+} as const;

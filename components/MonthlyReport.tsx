@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { WeatherStore, WeatherType, DayRecord } from '../types';
 import { MONTHS_RU, WEATHER_ICONS } from '../constants';
@@ -17,11 +16,14 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({ records, onBack }) => {
 
   const monthRecords = useMemo(() => {
     const year = 2026;
-    // Fix: Explicitly cast Object.values to DayRecord[] to resolve "Property 'date' does not exist on type 'unknown'"
-    return (Object.values(records) as DayRecord[]).filter(r => {
-      const d = new Date(r.date);
-      return d.getFullYear() === year && d.getMonth() === selectedMonth;
-    });
+    const list: DayRecord[] = [];
+    for (const [dateStr, entries] of Object.entries(records)) {
+      const d = new Date(dateStr);
+      if (d.getFullYear() !== year || d.getMonth() !== selectedMonth) continue;
+      if (entries.morning) list.push(entries.morning);
+      if (entries.evening) list.push(entries.evening);
+    }
+    return list;
   }, [records, selectedMonth]);
 
   const stats = useMemo(() => {
@@ -41,19 +43,25 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({ records, onBack }) => {
   }, [monthRecords]);
 
   const chartData = useMemo(() => {
-    return monthRecords.map(r => ({
-      day: new Date(r.date).getDate(),
-      temp: r.temperature,
-    })).sort((a, b) => a.day - b.day);
+    const byDay: Record<number, number[]> = {};
+    monthRecords.forEach(r => {
+      const day = new Date(r.date).getDate();
+      if (!byDay[day]) byDay[day] = [];
+      byDay[day].push(r.temperature);
+    });
+    return Object.entries(byDay)
+      .map(([day, temps]) => ({
+        day: Number(day),
+        temp: Math.round(temps.reduce((a, b) => a + b, 0) / temps.length),
+      }))
+      .sort((a, b) => a.day - b.day);
   }, [monthRecords]);
 
-  // Fetch AI Buddy insight
   useEffect(() => {
     if (monthRecords.length > 5) {
       const fetchAiInsight = async () => {
         setLoadingAi(true);
         try {
-          // Fix: Always use named parameter for apiKey and use process.env.API_KEY directly
           const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
           const weatherSummary = monthRecords.map(r => `${r.date}: ${r.temperature}°C, ${WEATHER_ICONS[r.weather].label}`).join(', ');
           const prompt = `Ты - Веселый Мишка-Метеоролог. Расскажи 5-летнему ребенку о погоде в ${MONTHS_RU[selectedMonth]} 2026 года на основе этих данных: ${weatherSummary}. 
@@ -63,7 +71,6 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({ records, onBack }) => {
             model: 'gemini-3-flash-preview',
             contents: prompt,
           });
-          // Fix: Access response text via property instead of method call as per GenerateContentResponse definition
           setAiInsight(response.text || "У тебя был отличный месяц наблюдений!");
         } catch (error) {
           console.error("AI Error:", error);

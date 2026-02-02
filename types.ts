@@ -1,5 +1,6 @@
-
 export type WeatherType = 'sun' | 'cloud' | 'rain' | 'snow';
+
+export type TimeOfDay = 'morning' | 'evening';
 
 export interface DayRecord {
   date: string; // ISO string YYYY-MM-DD
@@ -7,8 +8,14 @@ export interface DayRecord {
   weather: WeatherType;
 }
 
+/** Morning and/or evening entry for one day */
+export interface DayEntries {
+  morning?: DayRecord;
+  evening?: DayRecord;
+}
+
 export interface WeatherStore {
-  [date: string]: DayRecord;
+  [date: string]: DayEntries;
 }
 
 export enum AppMode {

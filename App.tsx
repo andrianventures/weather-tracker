@@ -1,41 +1,53 @@
 
 import React, { useState, useEffect } from 'react';
-import { AppMode, WeatherStore, WeatherType } from './types';
+import { AppMode, WeatherStore, WeatherType, TimeOfDay } from './types';
 import Calendar from './components/Calendar';
 import DayEntry from './components/DayEntry';
 import MonthlyReport from './components/MonthlyReport';
-
-const STORAGE_KEY = 'weather_tracker_2026_data';
+import { loadRecords, saveRecords, loadLastViewedMonth, saveLastViewedMonth } from './services/storage';
 
 const App: React.FC = () => {
   const [mode, setMode] = useState<AppMode>(AppMode.CALENDAR);
   const [showHelp, setShowHelp] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date(2026, 0, 1));
-  const [records, setRecords] = useState<WeatherStore>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : {};
-  });
+  const [records, setRecords] = useState<WeatherStore>({});
+  const [lastViewedMonth, setLastViewedMonth] = useState<number | null>(null);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-  }, [records]);
+    loadRecords().then(setRecords);
+    loadLastViewedMonth().then(setLastViewedMonth);
+  }, []);
 
   const handleDaySelect = (date: Date) => {
     setSelectedDate(date);
     setMode(AppMode.ENTRY);
   };
 
-  const handleSaveEntry = (temp: number, weather: WeatherType) => {
+  const handleSaveEntry = (timeOfDay: TimeOfDay, temp: number, weather: WeatherType) => {
     const dateStr = selectedDate.toISOString().split('T')[0];
-    setRecords(prev => ({
-      ...prev,
+    const existing = records[dateStr] || {};
+    const next: WeatherStore = {
+      ...records,
       [dateStr]: {
-        date: dateStr,
-        temperature: temp,
-        weather: weather
+        ...existing,
+        [timeOfDay]: {
+          date: dateStr,
+          temperature: temp,
+          weather: weather
+        }
       }
-    }));
+    };
+    setRecords(next);
+    saveRecords(next).catch(() => {});
+    const month = selectedDate.getMonth();
+    setLastViewedMonth(month);
+    saveLastViewedMonth(month).catch(() => {});
     setMode(AppMode.CALENDAR);
+  };
+
+  const handleMonthChange = (month: number) => {
+    setLastViewedMonth(month);
+    saveLastViewedMonth(month).catch(() => {});
   };
 
   return (
@@ -97,7 +109,9 @@ const App: React.FC = () => {
         {mode === AppMode.CALENDAR && (
           <Calendar 
             records={records} 
+            initialMonth={lastViewedMonth}
             onDaySelect={handleDaySelect} 
+            onMonthChange={handleMonthChange}
             onShowReport={() => setMode(AppMode.REPORT)}
           />
         )}
@@ -105,7 +119,7 @@ const App: React.FC = () => {
         {mode === AppMode.ENTRY && (
           <DayEntry 
             date={selectedDate} 
-            existingEntry={records[selectedDate.toISOString().split('T')[0]]}
+            existingEntries={records[selectedDate.toISOString().split('T')[0]] || {}}
             onSave={handleSaveEntry} 
             onCancel={() => setMode(AppMode.CALENDAR)} 
           />

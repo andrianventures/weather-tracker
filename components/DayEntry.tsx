@@ -1,24 +1,32 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { WeatherType, DayRecord } from '../types';
-import { TEMP_RANGE, WEATHER_ICONS, MONTHS_RU, DAYS_FULL_RU } from '../constants';
+import { WeatherType, DayRecord, DayEntries, TimeOfDay } from '../types';
+import { TEMP_RANGE, WEATHER_ICONS, MONTHS_RU, DAYS_FULL_RU, TIME_OF_DAY } from '../constants';
 
 interface DayEntryProps {
   date: Date;
-  existingEntry?: DayRecord;
-  onSave: (temp: number, weather: WeatherType) => void;
+  existingEntries?: DayEntries;
+  onSave: (timeOfDay: TimeOfDay, temp: number, weather: WeatherType) => void;
   onCancel: () => void;
 }
 
-const DayEntry: React.FC<DayEntryProps> = ({ date, existingEntry, onSave, onCancel }) => {
-  const [temp, setTemp] = useState<number>(existingEntry?.temperature ?? 20);
-  const [weather, setWeather] = useState<WeatherType>(existingEntry?.weather ?? 'sun');
+const DayEntry: React.FC<DayEntryProps> = ({ date, existingEntries = {}, onSave, onCancel }) => {
+  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>('morning');
+  const currentEntry = existingEntries[timeOfDay];
+  const [temp, setTemp] = useState<number>(currentEntry?.temperature ?? 20);
+  const [weather, setWeather] = useState<WeatherType>(currentEntry?.weather ?? 'sun');
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollIntervalRef = useRef<number | null>(null);
 
   const dayOfWeek = date.getDay() === 0 ? 6 : date.getDay() - 1;
-  const dayName = DAYS_FULL_RU[dayOfWeek];
-  const dateStr = `${date.getDate()} ${MONTHS_RU[date.getMonth()]}, ${dayName}`;
+  const dateStr = `${date.getDate()} ${MONTHS_RU[date.getMonth()]}, ${DAYS_FULL_RU[dayOfWeek]}`;
+
+  // When switching tab, load that tab's data
+  useEffect(() => {
+    const entry = existingEntries[timeOfDay];
+    setTemp(entry?.temperature ?? 20);
+    setWeather(entry?.weather ?? 'sun');
+  }, [timeOfDay, existingEntries]);
 
   // Always start with scale centered on zero
   useEffect(() => {
@@ -28,7 +36,7 @@ const DayEntry: React.FC<DayEntryProps> = ({ date, existingEntry, onSave, onCanc
         zeroBtn.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
       }
     }
-  }, []);
+  }, [timeOfDay]);
 
   const startScrolling = (direction: 'left' | 'right') => {
     if (scrollIntervalRef.current) return;
@@ -48,11 +56,30 @@ const DayEntry: React.FC<DayEntryProps> = ({ date, existingEntry, onSave, onCanc
 
   return (
     <div className="flex flex-col h-full space-y-8 animate-in fade-in zoom-in duration-300">
-      {/* Header */}
+      {/* Header: Home (left) | Date (center) | Утро / Вечер tabs (right) */}
       <div className="flex justify-between items-center bg-white py-2">
-        <button onClick={onCancel} className="text-5xl bouncy bg-blue-100 p-4 rounded-full hover:bg-blue-200 text-blue-700 shadow-md">🏠</button>
-        <h2 className="text-3xl md:text-5xl font-black text-blue-800 text-center tracking-tight">{dateStr}</h2>
-        <div className="w-16"></div>
+        <button onClick={onCancel} className="text-5xl bouncy bg-blue-100 p-4 rounded-full hover:bg-blue-200 text-blue-700 shadow-md flex-shrink-0">🏠</button>
+        <h2 className="text-3xl md:text-5xl font-black text-blue-800 text-center tracking-tight flex-1 min-w-0 px-2">{dateStr}</h2>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {(['morning', 'evening'] as const).map((slot) => (
+            <button
+              key={slot}
+              type="button"
+              onClick={() => setTimeOfDay(slot)}
+              className={`flex flex-col items-center justify-center p-3 rounded-2xl bouncy transition-all border-4 min-w-[72px] ${
+                timeOfDay === slot
+                  ? 'bg-amber-100 border-amber-500 ring-4 ring-amber-200 shadow-lg'
+                  : 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+              }`}
+              title={TIME_OF_DAY[slot].label}
+            >
+              <span className="text-3xl md:text-4xl">{TIME_OF_DAY[slot].icon}</span>
+              <span className={`text-sm font-black uppercase ${timeOfDay === slot ? 'text-amber-800' : 'text-blue-600'}`}>
+                {TIME_OF_DAY[slot].label}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Temperature Scale Section */}
@@ -60,7 +87,6 @@ const DayEntry: React.FC<DayEntryProps> = ({ date, existingEntry, onSave, onCanc
         <h3 className="text-2xl font-black text-center text-blue-600 uppercase tracking-widest">Градусы Цельсия 🌡️</h3>
         
         <div className="relative flex items-center group">
-          {/* Left Arrow - mouse + touch for iPad */}
           <button
             type="button"
             onMouseEnter={() => startScrolling('left')}
@@ -74,7 +100,6 @@ const DayEntry: React.FC<DayEntryProps> = ({ date, existingEntry, onSave, onCanc
             ◀
           </button>
 
-          {/* Scrollable Container */}
           <div 
             ref={scrollRef}
             className="flex overflow-x-auto scroll-smooth no-scrollbar py-6 px-20 gap-4 bg-blue-50/50 rounded-[3rem] border-y-4 border-blue-100 items-center w-full min-h-[160px]"
@@ -83,7 +108,6 @@ const DayEntry: React.FC<DayEntryProps> = ({ date, existingEntry, onSave, onCanc
             {TEMP_RANGE.map(t => {
               const isZero = t === 0;
               const isNegative = t < 0;
-              const isPositive = t > 0;
               const colorClasses = isZero
                 ? 'bg-gray-400 text-white border-gray-500'
                 : isNegative
@@ -110,7 +134,6 @@ const DayEntry: React.FC<DayEntryProps> = ({ date, existingEntry, onSave, onCanc
             })}
           </div>
 
-          {/* Right Arrow - mouse + touch for iPad */}
           <button
             type="button"
             onMouseEnter={() => startScrolling('right')}
@@ -150,7 +173,7 @@ const DayEntry: React.FC<DayEntryProps> = ({ date, existingEntry, onSave, onCanc
       {/* Save Button */}
       <div className="flex justify-center pt-8 pb-10">
         <button
-          onClick={() => onSave(temp, weather)}
+          onClick={() => onSave(timeOfDay, temp, weather)}
           className="bg-blue-600 hover:bg-blue-700 text-white text-3xl md:text-5xl font-black py-10 px-24 rounded-full shadow-2xl shadow-blue-300 bouncy transform hover:scale-110 transition-all flex items-center gap-6 border-8 border-white"
         >
           <span>Запомнить!</span>
